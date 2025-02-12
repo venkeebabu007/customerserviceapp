@@ -7,172 +7,72 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import type { User } from "@/lib/mockData"
+import { toast } from "react-hot-toast"
+import { useAuthStore } from "@/lib/store"
 
 export default function AddUsersPage() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [role, setRole] = useState<"agent" | "manager">("agent")
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(false) // Added loading state
+  const [isLoading, setIsLoading] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
+  const userRole = useAuthStore((state) => state.userRole)
 
   useEffect(() => {
-    const userJson = localStorage.getItem("currentUser")
-    if (userJson) {
-      const user = JSON.parse(userJson)
-      setCurrentUser(user)
-      if (user.role !== "admin") {
-        router.push("/")
-      }
+    if (userRole !== "admin") {
+      router.push("/dashboard")
     } else {
-      router.push("/login")
+      setIsAdmin(true)
     }
-  }, [router])
+  }, [userRole, router])
 
-  console.log("Rendering AddUsersPage, current user:", currentUser)
-
-  const handleSubmit1 = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError("")
-    setSuccess("")
     setIsLoading(true)
 
-    const supabase = createClient()
-
     try {
-      // Check if the current user is an admin
+      const supabase = createClient()
       const {
         data: { session },
-        error: sessionError,
       } = await supabase.auth.getSession()
-      if (sessionError) {
-        throw new Error(`Session error: ${sessionError.message}`)
-      }
+
       if (!session) {
-        throw new Error("Not authenticated")
+        throw new Error("No active session")
       }
 
-      const { data: adminUser, error: adminError } = await supabase
-        .from("users_csapp")
-        .select("role")
-        .eq("auth_user_id", session.user.id)
-        .single()
-
-      if (adminError) {
-        throw new Error(`Admin check error: ${adminError.message}`)
-      }
-      if (adminUser?.role !== "admin") {
-        throw new Error("Not authorized to add users")
-      }
-
-      console.log("Attempting to create user:", { email, role })
-
-      // Create user in Supabase Auth
-      const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
+      const response = await fetch("/api/admin/create-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ name, email, password, role }),
       })
 
-      if (authError) {
-        throw new Error(`Error creating user in Auth: ${authError.message}`)
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to create user")
       }
 
-      if (!authUser.user) {
-        throw new Error("Error: User not created in Auth")
-      }
+      toast.success("User created successfully!")
 
-      console.log("User created in Auth:", authUser.user.id)
-
-      // Insert user into users_csapp table
-      const { data: dbUser, error: dbError } = await supabase
-        .from("users_csapp")
-        .insert({
-          auth_user_id: authUser.user.id,
-          name,
-          email,
-          role,
-          is_active: true,
-        })
-        .single()
-
-      if (dbError) {
-        throw new Error(`Error inserting user into database: ${dbError.message}`)
-      }
-
-      console.log("User added to database:", dbUser)
-
-      setSuccess("User created successfully!")
+      // Reset form fields
       setName("")
       setEmail("")
       setPassword("")
       setRole("agent")
     } catch (error) {
-      console.error("Caught error:", error)
-      if (error instanceof Error) {
-        setError(error.message)
-      } else {
-        setError("An unknown error occurred")
-      }
+      console.error("Error adding user:", error)
+      toast.error(error instanceof Error ? error.message : "Failed to add user. Please try again.")
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setSuccess("")
-    setIsLoading(true)
-
-    try {
-      const { data: authData, error: authError } = await createClient().auth.signUp({
-        email,
-        password,
-      })
-
-      if (authError) {
-        if (authError.status === 422 && authError.message === "User already registered") {
-          setError("A user with this email already exists. Please use a different email.")
-        } else {
-          throw authError
-        }
-        return
-      }
-
-      if (authData.user) {
-        const { error: insertError } = await createClient().from("users_csapp").upsert({
-          auth_user_id: authData.user.id,
-          email: email,
-          name: name,
-          role: role,
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-
-        if (insertError) throw insertError
-
-        setSuccess("User created successfully!")
-        setName("")
-        setEmail("")
-        setPassword("")
-        setRole("agent")
-      }
-    } catch (e) {
-      console.error("Error during sign-up:", e)
-      setError(e instanceof Error ? e.message : "An error occurred during sign-up")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  if (!currentUser || currentUser.role !== "admin") {
-    return null
+  if (!isAdmin) {
+    return <div>Loading...</div>
   }
 
   return (
@@ -210,27 +110,9 @@ export default function AddUsersPage() {
           </Select>
         </div>
         <Button type="submit" disabled={isLoading}>
-          {" "}
-          {/* Updated button with loading state */}
           {isLoading ? "Adding User..." : "Add User"}
         </Button>
       </form>
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4" role="alert">
-          <strong className="font-bold">Error: </strong>
-          <span className="block sm:inline">{error}</span>
-          <pre className="mt-2 text-xs">{JSON.stringify(error, null, 2)}</pre>
-        </div>
-      )}
-      {success && (
-        <div
-          className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mt-4"
-          role="alert"
-        >
-          <strong className="font-bold">Success: </strong>
-          <span className="block sm:inline">{success}</span>
-        </div>
-      )}
     </div>
   )
 }
