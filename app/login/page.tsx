@@ -31,7 +31,7 @@ export default function LoginPage() {
         data: { session },
       } = await supabase.auth.getSession()
       if (session) {
-        const redirectTo = searchParams.get("redirectedFrom") || "/dashboard"
+        const redirectTo = searchParams.get("redirectedFrom") || "/"
         router.push(redirectTo)
       }
     }
@@ -79,7 +79,7 @@ export default function LoginPage() {
         }
 
         toast.success("Logged in successfully")
-        const redirectTo = searchParams.get("redirectedFrom") || "/dashboard"
+        const redirectTo = searchParams.get("redirectedFrom") || "/"
         router.push(redirectTo)
       }
     } catch (error) {
