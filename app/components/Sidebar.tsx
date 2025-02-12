@@ -24,7 +24,7 @@ const menuItems = [
   { icon: BarChart2, label: "Reports", href: "/reports" },
   { icon: FileText, label: "Audit Logs", href: "/audit" },
   { icon: Settings, label: "Settings", href: "/settings" },
-  { icon: ShieldAlert, label: "Admin Dashboard", href: "/admin/dashboard", adminOnly: true },
+  // { icon: ShieldAlert, label: "Admin Dashboard", href: "/admin/dashboard", adminOnly: true },
   { icon: UserPlus, label: "Add Users", href: "/admin/add-users", adminOnly: true },
 ]
 
