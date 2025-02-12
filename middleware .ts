@@ -19,13 +19,13 @@ export async function middleware(req: NextRequest) {
 //     return NextResponse.redirect(new URL("/login", req.url))
 //   }
 
-//   if (user && req.nextUrl.pathname.startsWith("/admin")) {
-//     const { data: userData } = await supabase.from("users_csapp").select("role").eq("auth_user_id", user.id).single()
+  // if (user && req.nextUrl.pathname.startsWith("/admin")) {
+  //   const { data: userData } = await supabase.from("users_csapp").select("role").eq("auth_user_id", user.id).single()
 
-//     if (userData?.role !== "admin") {
-//       return NextResponse.redirect(new URL("/", req.url))
-//     }
-//   }
+  //   if (userData?.role !== "admin") {
+  //     return NextResponse.redirect(new URL("/", req.url))
+  //   }
+  // }
 
 //   return res
 }

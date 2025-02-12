@@ -1,167 +1,145 @@
-"use client"
+import { createClient } from "@/utils/supabase/server"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { createClient } from "@/utils/supabase/client"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { toast, Toaster } from "react-hot-toast"
-import { motion } from "framer-motion"
-import { Loader2 } from "lucide-react"
-import Image from "next/image"
-import type React from "react"
+// Dynamically import the chart components with ssr disabled
+const BarChart = dynamic(() => import("recharts").then((mod) => mod.BarChart), { ssr: false })
+const Bar = dynamic(() => import("recharts").then((mod) => mod.Bar), { ssr: false })
+const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false })
+const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false })
+const CartesianGrid = dynamic(() => import("recharts").then((mod) => mod.CartesianGrid), { ssr: false })
+const Tooltip = dynamic(() => import("recharts").then((mod) => mod.Tooltip), { ssr: false })
+const Legend = dynamic(() => import("recharts").then((mod) => mod.Legend), { ssr: false })
+const ResponsiveContainer = dynamic(() => import("recharts").then((mod) => mod.ResponsiveContainer), { ssr: false })
 
-export default function LoginPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+export const dynamic = "force-dynamic"
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setIsLoading(true)
+async function getTicketData() {
+  const supabase = createClient()
 
-    const supabase = createClient()
+  const { data: tickets, error } = await supabase
+    .from("tickets_csapp")
+    .select("*")
+    .order("created_at", { ascending: true })
 
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (error) {
-        throw error
-      }
-
-      if (data.user) {
-        const { data: user, error: userError } = await supabase
-          .from("users_csapp")
-          .select("*")
-          .eq("email", data.user.email)
-          .single()
-
-        if (userError) {
-          throw userError
-        }
-
-        if (!user) {
-          throw new Error("User not found in the system")
-        }
-
-        // Create audit log for successful login
-        const { error: auditError } = await supabase.from("audit_logs_csapp").insert({
-          user_id: user.id,
-          action: "login",
-          details: "User logged in successfully",
-          created_at: new Date().toISOString(),
-        })
-
-        if (auditError) {
-          console.error("Error creating audit log:", auditError)
-        }
-
-        toast.success("Logged in successfully")
-        router.push("/")
-      }
-    } catch (error) {
-      console.error("Login error:", error)
-      setError(error instanceof Error ? error.message : "An unknown error occurred")
-      toast.error("Login failed. Please try again.")
-    } finally {
-      setIsLoading(false)
-    }
+  if (error) {
+    console.error("Error fetching tickets:", error)
+    return []
   }
 
+  return tickets
+}
+
+async function getAgentPerformance() {
+  const supabase = createClient()
+
+  const { data: agents, error } = await supabase.from("users_csapp").select("id, name").in("role", ["agent", "manager"])
+
+  if (error) {
+    console.error("Error fetching agents:", error)
+    return []
+  }
+
+  const agentPerformance = await Promise.all(
+    agents.map(async (agent) => {
+      const { data: resolvedTickets, error: ticketError } = await supabase
+        .from("tickets_csapp")
+        .select("*")
+        .eq("assigned_agent_id", agent.id)
+        .eq("status", "Resolved")
+
+      if (ticketError) {
+        console.error(`Error fetching tickets for agent ${agent.id}:`, ticketError)
+        return null
+      }
+
+      const ticketsResolved = resolvedTickets.length
+      const totalResolutionTime = resolvedTickets.reduce((sum, ticket) => {
+        const createdAt = new Date(ticket.created_at)
+        const updatedAt = new Date(ticket.updated_at)
+        return sum + (updatedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60) // Convert to hours
+      }, 0)
+
+      const averageResolutionTime = ticketsResolved > 0 ? totalResolutionTime / ticketsResolved : 0
+
+      return {
+        agentId: agent.id,
+        agentName: agent.name,
+        ticketsResolved,
+        averageResolutionTime,
+      }
+    }),
+  )
+
+  return agentPerformance.filter(Boolean)
+}
+
+export default async function ReportsPage() {
+  const tickets = await getTicketData()
+  const agentPerformance = await getAgentPerformance()
+
+  const ticketTrends = tickets.reduce((acc: any, ticket) => {
+    const date = new Date(ticket.created_at).toISOString().split("T")[0]
+    if (!acc[date]) {
+      acc[date] = { date, newTickets: 0, resolvedTickets: 0 }
+    }
+    acc[date].newTickets++
+    if (ticket.status === "Resolved") {
+      acc[date].resolvedTickets++
+    }
+    return acc
+  }, {})
+
+  const chartData = Object.values(ticketTrends)
+
+  const unresolvedTickets = tickets.filter((ticket) => ticket.status !== "Resolved").length
+
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <Toaster position="top-right" />
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <Image src="/placeholder.svg?height=100&width=100" alt="Logo" width={100} height={100} className="mx-auto" />
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Sign in to your account</h2>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold">Reports & Analytics</h1>
+
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold mb-4">Ticket Trends</h2>
+        <div className="h-[300px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="newTickets" fill="#8884d8" name="New Tickets" />
+              <Bar dataKey="resolvedTickets" fill="#82ca9d" name="Resolved Tickets" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <motion.div
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10"
-        >
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <Label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </Label>
-              <div className="mt-1">
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-            </div>
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold mb-4">Agent Performance</h2>
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white">
+            <thead>
+              <tr className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                <th className="py-3 px-6 text-left">Agent Name</th>
+                <th className="py-3 px-6 text-left">Tickets Resolved</th>
+                <th className="py-3 px-6 text-left">Avg. Resolution Time (hours)</th>
+              </tr>
+            </thead>
+            <tbody className="text-gray-600 text-sm font-light">
+              {agentPerformance.map((agent) => (
+                <tr key={agent.agentId} className="border-b border-gray-200 hover:bg-gray-100">
+                  <td className="py-3 px-6">{agent.agentName}</td>
+                  <td className="py-3 px-6">{agent.ticketsResolved}</td>
+                  <td className="py-3 px-6">{agent.averageResolutionTime.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-            <div>
-              <Label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </Label>
-              <div className="mt-1">
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-            </div>
-
-            {error && (
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-600 text-sm">
-                {error}
-              </motion.p>
-            )}
-
-            <div>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing In...
-                  </div>
-                ) : (
-                  "Sign In"
-                )}
-              </Button>
-            </div>
-          </form>
-
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or contact your administrator</span>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+      <div>
+        <h2 className="text-2xl font-bold mb-4">Unresolved Tickets</h2>
+        <p className="text-4xl font-bold text-red-500">{unresolvedTickets}</p>
       </div>
     </div>
   )
