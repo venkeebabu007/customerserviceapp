@@ -151,13 +151,13 @@ export default function AddUsersPage() {
       setCurrentUser(user)}
 
         if (userRole !== "admin") {
-          router.push("/dashboard")
+          router.push("/")
         } else {
           setIsAdmin(true)
         }
       }, [userRole, router])
 
-  console.log("Rendering AddUsersPage, current user:", currentUser)
+  console.log("Rendering AddUsersPage, current user:", isAdmin)
 
   
 
@@ -209,7 +209,7 @@ export default function AddUsersPage() {
     }
   }
 
-  if (!currentUser || currentUser.role !== "admin") {
+  if (!isAdmin) {
     return null
   }
 
