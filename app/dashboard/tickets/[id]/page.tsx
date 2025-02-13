@@ -5,7 +5,7 @@ import StatusChangeForm from "./StatusChangeForm"
 import AssignTicketForm from "./AssignTicketForm"
 import FileUploadForm from "./FileUploadForm"
 import EscalateTicketButton from "./EscalateTicketButton"
-import TicketAttachments from "@/app/components/TicketAttachments"
+import TicketAttachments from "@/app/dashboard/components/TicketAttachments"
 import CreateTicketPage from "../create/page"
 
 export const dynamic = "force-dynamic"

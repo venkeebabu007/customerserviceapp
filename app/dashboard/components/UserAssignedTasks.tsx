@@ -91,7 +91,7 @@ export default function UserAssignedTasks() {
         <ul className="space-y-2">
           {assignedTickets.map((ticket) => (
             <li key={ticket.id} className="flex justify-between items-center border-b pb-2">
-              <Link href={`/tickets/${ticket.id}`} className="text-blue-600 hover:underline">
+              <Link href={`/dashboard/tickets/${ticket.id}`} className="text-blue-600 hover:underline">
                 {ticket.title}
               </Link>
               <div className="flex space-x-2">

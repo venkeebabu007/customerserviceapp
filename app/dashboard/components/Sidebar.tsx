@@ -20,12 +20,12 @@ import { createClient } from "@/utils/supabase/client"
 
 const menuItems = [
   { icon: Home, label: "Dashboard", href: "/" },
-  { icon: TicketIcon, label: "Tickets", href: "/tickets" },
-  { icon: BarChart2, label: "Reports", href: "/reports" },
-  { icon: FileText, label: "Audit Logs", href: "/audit" },
-  { icon: Settings, label: "Settings", href: "/settings" },
-  // { icon: ShieldAlert, label: "Admin Dashboard", href: "/admin/dashboard", adminOnly: true },
-  { icon: UserPlus, label: "Add Users", href: "/admin/add-users", adminOnly: true },
+  { icon: TicketIcon, label: "Tickets", href: "/dashboard/tickets" },
+  { icon: BarChart2, label: "Reports", href: "/dashboard/reports" },
+  { icon: FileText, label: "Audit Logs", href: "/dashboard/audit" },
+  { icon: Settings, label: "Settings", href: "/dashboard/settings" },
+  // { icon: ShieldAlert, label: "Admin Dashboard", href: "/dashboard/admin/dashboard", adminOnly: true },
+  { icon: UserPlus, label: "Add Users", href: "/dashboard/admin/add-users", adminOnly: true },
 ]
 
 export function AppSidebar() {

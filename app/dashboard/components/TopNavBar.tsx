@@ -14,7 +14,11 @@ export function TopNavBar({ user }: { user: User }) {
     setIsLoggingOut(true)
     const supabase = createClient()
     await supabase.auth.signOut()
-    router.push("/login")
+    setTimeout(() => {
+      setIsLoggingOut(false)
+      router.push("/login")
+    }, 4)
+   
   }
 
   return (

@@ -24,7 +24,7 @@ export default async function TicketsPage() {
       <UserAssignedTasks />
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">All Tickets</h1>
-        <Link href="/tickets/create">
+        <Link href="/dashboard/tickets/create">
           <Button>Create New Ticket</Button>
         </Link>
       </div>
@@ -80,7 +80,7 @@ export default async function TicketsPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{ticket.priority}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{ticket.category}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <Link href={`/tickets/${ticket.id}`} className="text-indigo-600 hover:text-indigo-900 mr-2">
+                    <Link href={`/dashboard/tickets/${ticket.id}`} className="text-indigo-600 hover:text-indigo-900 mr-2">
                       View
                     </Link>
                   </td>
@@ -91,8 +91,8 @@ export default async function TicketsPage() {
         </div>
       </div>
       <div className="mt-8">
-        <h2 className="text-2xl font-bold mb-4">All Attachments</h2>
-        <AllAttachments />
+        {/* <h2 className="text-2xl font-bold mb-4">All Attachments</h2>
+        <AllAttachments /> */}
       </div>
     </div>
   )

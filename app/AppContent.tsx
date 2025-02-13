@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { TopNavBar } from "@/app/components/TopNavBar"
-import { AppSidebar } from "@/app/components/Sidebar"
+import { TopNavBar } from "@/app/dashboard/components/TopNavBar"
+import { AppSidebar } from "@/app/dashboard/components/Sidebar"
 import { useTheme } from "@/components/ThemeProvider"
 import type { User } from "@/lib/mockData"
 import { createClient } from "@/utils/supabase/client"
