@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect ,Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/utils/supabase/client"
 import { Button } from "@/components/ui/button"
@@ -10,6 +10,7 @@ import { toast } from "react-hot-toast"
 import { Loader2 } from "lucide-react"
 import Image from "next/image"
 import { useAuthStore } from "@/lib/store"
+
 
 export default function LoginPage() {
   // Initialize all state variables at the top
@@ -97,6 +98,7 @@ export default function LoginPage() {
   }
 
   return (
+    <Suspense fallback={<div className="flex justify-center items-center min-h-screen">Loading...</div>}>
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Image src="/placeholder.svg" alt="Logo" width={100} height={100} className="mx-auto" />
@@ -157,6 +159,7 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+    </Suspense>
   )
 }
 
