@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { mockUsers, type User, type UserRole } from "../../../lib/mockData"
+import { mockUsers, type User, type UserRole } from "@/lib/mockData"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"

@@ -3,18 +3,18 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { mockUsers, type User } from "../../../lib/mockData"
+
 import { Button } from "@/components/ui/button"
 
 export default function AdminDashboardPage() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
+  // const [currentUser, setCurrentUser] = useState<User | null>(null)
   const router = useRouter()
 
   useEffect(() => {
     const userJson = localStorage.getItem("currentUser")
     if (userJson) {
       const user = JSON.parse(userJson)
-      setCurrentUser(user)
+      // setCurrentUser(user)
       if (user.role !== "admin" && user.role !== "manager") {
         router.push("/")
       }
@@ -23,9 +23,9 @@ export default function AdminDashboardPage() {
     }
   }, [router])
 
-  if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "manager")) {
-    return null
-  }
+  // if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "manager")) {
+  //   return null
+  // }
 
   return (
     <div className="space-y-6">
@@ -39,8 +39,8 @@ export default function AdminDashboardPage() {
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h2 className="text-xl font-semibold mb-4">System Statistics</h2>
-          <p>Total Users: {mockUsers.length}</p>
-          <p>Active Users: {mockUsers.filter((user) => user.isActive).length}</p>
+          {/* <p>Total Users: {mockUsers.length}</p>
+          <p>Active Users: {mockUsers.filter((user) => user.isActive).length}</p> */}
         </div>
       </div>
     </div>
