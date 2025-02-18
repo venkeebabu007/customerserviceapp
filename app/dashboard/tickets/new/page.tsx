@@ -53,7 +53,7 @@ export default function NewTicketPage() {
       if (error) throw error
 
       toast.success("Ticket created successfully!")
-      router.push("/tickets")
+      router.push("dashboard/tickets")
     } catch (error) {
       console.error("Error creating ticket:", error)
       toast.error("Failed to create ticket. Please try again.")
