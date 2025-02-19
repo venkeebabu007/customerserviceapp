@@ -1,4 +1,8 @@
 import { createClient } from "@/utils/supabase/server"
+import { DashboardCard } from "@/components/DashboardCard"
+
+
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import UserAssignedTasks from "../components/UserAssignedTasks"
@@ -11,7 +15,10 @@ export default async function TicketsPage() {
 
   const { data: tickets, error } = await supabase
     .from("tickets_csapp")
-    .select("*")
+    .select(`
+    *,
+    assigned_agent:users_csapp(name)
+  `)
     .order("created_at", { ascending: false })
 
   if (error) {
@@ -67,6 +74,12 @@ export default async function TicketsPage() {
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
+                  Assigned To
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Actions
                 </th>
               </tr>
@@ -79,8 +92,11 @@ export default async function TicketsPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{ticket.status}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{ticket.priority}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{ticket.category}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {ticket.assigned_agent ? ticket.assigned_agent.name : "Unassigned"}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <Link href={`/dashboard/tickets/${ticket.id}`} className="text-indigo-600 hover:text-indigo-900 mr-2">
+                    <Link href={`/tickets/${ticket.id}`} className="text-indigo-600 hover:text-indigo-900 mr-2">
                       View
                     </Link>
                   </td>
@@ -90,10 +106,7 @@ export default async function TicketsPage() {
           </table>
         </div>
       </div>
-      <div className="mt-8">
-        {/* <h2 className="text-2xl font-bold mb-4">All Attachments</h2>
-        <AllAttachments /> */}
-      </div>
+     
     </div>
   )
 }
